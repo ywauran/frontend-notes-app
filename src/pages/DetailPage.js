@@ -1,35 +1,50 @@
 import React from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import NoteDetail from '../components/NoteDetail';
-import { deleteNote, getNote } from '../utils/data';
+import { deleteNote, getNote } from '../utils/network-data';
+import { BiTrash } from 'react-icons/bi';
+import ThemeContext from '../contexts/ThemeContext';
+import { showFormattedDate }  from '../utils/index';
 
-function DetailPageWrapper() {
+function DetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { theme } = useContext(ThemeContext);
+  
 
-  function onDeleteHandler(id) {
-    deleteNote(id);
-    navigate('/');
-  }
-  return <DetailPage id={id} onDelete={onDeleteHandler} />;
+  const [note, setNote] = useState({
+    title: '',
+    body: '',
+    createdAt: '',
+  });
+
+  useEffect(() => {
+    async function getNoteDetail(id) {
+      const { error, data } = await getNote(id);
+      if (!error) {
+        setNote(data);
+      }
+    }
+
+    getNoteDetail(id);
+  }, [id]);
+
+  return (
+    <div className={`${theme === 'dark' ? 'text-white' : 'text-black'} ${theme === 'dark' ? 'border-white' : 'border-black'}  p-5 border-2`}>
+      <h3 className='text-lg'>{note.title}</h3>
+      <p className='text-md'>{showFormattedDate(note.createdAt)}</p>
+      <p className='text-sm text-justify'>{note.body}</p>
+      <div className='flex justify-end'>
+        <button onClick={() => {
+          deleteNote(id);
+          navigate('/');
+        }}>
+          <BiTrash/>
+        </button>
+      </div>
+    </div>
+  )
 }
 
-class DetailPage extends React.Component {
-  constructor(props) {
-    super(props);
+export default DetailPage;
 
-    this.state = {
-      note: getNote(props.id),
-    };
-  }
-
-  render() {
-    return (
-      <section>
-        <NoteDetail {...this.state.note} onDelete={deleteNote} />
-      </section>
-    );
-  }
-}
-
-export default DetailPageWrapper;
